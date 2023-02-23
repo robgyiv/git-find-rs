@@ -1,3 +1,4 @@
+use std::env;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
@@ -6,7 +7,9 @@ fn main() {
 }
 
 unsafe fn dirs() -> () {
-    let mut it = WalkDir::new("/Users/robbie/code").max_depth(3).into_iter();
+    let args: Vec<String> = env::args().collect();
+    let code_dir = &args[1];
+    let mut it = WalkDir::new(code_dir).max_depth(3).into_iter();
     loop {
         let entry = match it.next() {
             None => break,
