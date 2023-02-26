@@ -8,8 +8,8 @@ fn main() {
 
 unsafe fn walk_directories() -> () {
     let args: Vec<String> = env::args().collect();
-    let code_dir = &args[1];
-    let mut it = WalkDir::new(code_dir).max_depth(3).into_iter();
+    let code_directory = &args[1];
+    let mut it = WalkDir::new(code_directory).max_depth(3).into_iter();
     loop {
         let entry = match it.next() {
             None => break,
@@ -17,10 +17,10 @@ unsafe fn walk_directories() -> () {
             Some(Ok(entry)) => entry,
         };
         if is_git_directory(&entry) {
-            it.skip_current_dir();
             let path = Path::new(entry.path());
             let parent = path.parent().unwrap();
             println!("{}", parent.display());
+            it.skip_current_dir();
             continue;
         }
     }
