@@ -16,20 +16,15 @@ fn walk_directories() -> () {
             Some(Err(err)) => panic!("ERROR: {}", err),
             Some(Ok(entry)) => entry,
         };
-        if is_git_directory(&entry) {
+        if has_git_directory(&entry) {
             let path = Path::new(entry.path());
-            let parent = path.parent().unwrap();
-            println!("{}", parent.display());
+            println!("{}", path.display());
             it.skip_current_dir();
             continue;
         }
     }
 }
 
-fn is_git_directory(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.ends_with(".git"))
-        .unwrap_or(false)
+fn has_git_directory(entry: &DirEntry) -> bool {
+    Path::new(&entry.path().join(".git")).exists()
 }
