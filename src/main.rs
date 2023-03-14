@@ -3,10 +3,10 @@ use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
 fn main() {
-    unsafe { walk_directories() };
+    walk_directories();
 }
 
-unsafe fn walk_directories() -> () {
+fn walk_directories() -> () {
     let args: Vec<String> = env::args().collect();
     let code_directory = &args[1];
     let mut it = WalkDir::new(code_directory).max_depth(3).into_iter();
