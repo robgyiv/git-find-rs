@@ -13,18 +13,17 @@ Note that as of right now, this is mostly for my own understanding and built for
 Obviously this is not a totally fair comparison as Rust is compiled, but compared to [git-find-repos](https://github.com/acroz/git-find-repos) we see the following improvement on my 2017 MacBook Pro with 100 git directories:
 
 ```bash
-$ hyperfine --warmup 3 '/usr/local/bin/git-find-rs $HOME/code' '/usr/local/bin/git-find-repos $HOME/code'
 Benchmark 1: /usr/local/bin/git-find-rs $HOME/code
-  Time (mean ± σ):       9.0 ms ±   1.9 ms    [User: 2.0 ms, System: 5.6 ms]
-  Range (min … max):     5.8 ms …  17.1 ms    198 runs
-
-Benchmark 2: /usr/local/bin/git-find-repos $HOME/code
-  Time (mean ± σ):     915.6 ms ±  27.9 ms    [User: 259.0 ms, System: 635.7 ms]
-  Range (min … max):   880.3 ms … 972.1 ms    10 runs
-
+  Time (mean ± σ):     596.9 ms ±  29.4 ms    [User: 112.5 ms, System: 474.0 ms]
+  Range (min … max):   551.2 ms … 633.7 ms    10 runs
+ 
+Benchmark 2: /Users/robbie/.local/bin/git-find-repos $HOME/code
+  Time (mean ± σ):     918.9 ms ±  99.6 ms    [User: 242.7 ms, System: 651.4 ms]
+  Range (min … max):   791.6 ms … 1044.4 ms    10 runs
+ 
 Summary
   '/usr/local/bin/git-find-rs $HOME/code' ran
-  101.36 ± 21.32 times faster than '/usr/local/bin/git-find-repos $HOME/code'
+    1.54 ± 0.18 times faster than '/Users/robbie/.local/bin/git-find-repos $HOME/code'
 ```
 
 ---
