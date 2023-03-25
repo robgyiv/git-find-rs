@@ -9,7 +9,7 @@ fn main() {
         let repo_paths: Vec<String> = walk_directories(parent_directory.to_string());
         print_results(repo_paths);
     } else {
-        println!("Repo parent directory not specified - try 'git-find-rs /home/foo/code'");
+        println!("Parent directory of all repos not specified - try 'git-find-rs /home/foo/code'");
     }
 }
 
