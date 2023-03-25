@@ -9,7 +9,7 @@ fn main() {
         let repo_paths: Vec<String> = walk_directories(parent_directory.to_string());
         print_results(repo_paths);
     } else {
-        println!("Repo parent directory not specified - try 'git-find-rs /home/foo/code'");
+        println!("Parent directory of all repos not specified - try 'git-find-rs /home/foo/code'");
     }
 }
 
@@ -33,7 +33,10 @@ fn walk_directories(parent_directory: String) -> Vec<String> {
 }
 
 fn has_git_directory(entry: &DirEntry) -> bool {
-    Path::new(&entry.path().join(".git")).exists()
+    if entry.file_type().is_dir() {
+        return Path::new(&entry.path().join(".git")).exists();
+    }
+    return false;
 }
 
 fn print_results(repo_paths: Vec<String>) -> () {
