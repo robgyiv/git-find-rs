@@ -33,7 +33,10 @@ fn walk_directories(parent_directory: String) -> Vec<String> {
 }
 
 fn has_git_directory(entry: &DirEntry) -> bool {
-    Path::new(&entry.path().join(".git")).exists()
+    if entry.file_type().is_dir() {
+        return Path::new(&entry.path().join(".git")).exists();
+    }
+    return false;
 }
 
 fn print_results(repo_paths: Vec<String>) -> () {
