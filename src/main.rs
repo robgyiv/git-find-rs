@@ -1,46 +1,45 @@
+use anyhow::{Context, Result};
 use std::env;
-use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
+use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 
-fn main() {
+fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len() == 2 {
-        let parent_directory = &args[1];
-        let repo_paths: Vec<String> = walk_directories(parent_directory.to_string());
-        print_results(repo_paths);
-    } else {
-        println!("Parent directory of all repos not specified - try 'git-find-rs /home/foo/code'");
+
+    if args.len() < 2 {
+        anyhow::bail!("Parent directory of all repos not specified - try 'git-find-rs $HOME/code'");
     }
+
+    let parent_directory = &args[1];
+    let repo_paths = find_git_repos(parent_directory)?;
+    print_results(&repo_paths);
+
+    Ok(())
 }
 
-fn walk_directories(parent_directory: String) -> Vec<String> {
-    let mut repo_paths: Vec<String> = Vec::new();
-    let mut it = WalkDir::new(parent_directory).max_depth(6).into_iter();
-    loop {
-        let entry = match it.next() {
-            None => break,
-            Some(Err(err)) => panic!("ERROR: {}", err),
-            Some(Ok(entry)) => entry,
-        };
-        if has_git_directory(&entry) {
-            let path = Path::new(entry.path());
-            repo_paths.push(path.display().to_string());
-            it.skip_current_dir();
-            continue;
-        }
-    }
-    return repo_paths;
+fn find_git_repos(parent_directory: &str) -> Result<Vec<PathBuf>> {
+    WalkDir::new(parent_directory)
+        .max_depth(6)
+        .into_iter()
+        .filter_map(|entry| {
+            let entry = entry.with_context(|| {
+                format!("Failed to read directory entry in '{}'", parent_directory)
+            });
+            match entry {
+                Ok(entry) if is_git_directory(entry.path()) => Some(Ok(entry.into_path())),
+                Ok(_) => None, // Ignore non-git directories without errors
+                Err(e) => Some(Err(e.into())),
+            }
+        })
+        .collect()
 }
 
-fn has_git_directory(entry: &DirEntry) -> bool {
-    if entry.file_type().is_dir() {
-        return Path::new(&entry.path().join(".git")).exists();
-    }
-    return false;
+fn is_git_directory(path: &Path) -> bool {
+    path.is_dir() && path.join(".git").exists()
 }
 
-fn print_results(repo_paths: Vec<String>) -> () {
-    repo_paths.iter().for_each(|it| {
-        println!("{}", it);
-    })
+fn print_results(repo_paths: &[PathBuf]) {
+    for path in repo_paths {
+        println!("{}", path.display());
+    }
 }
