@@ -1,25 +1,32 @@
 use anyhow::{Context, Result};
-use std::env;
+use clap::Parser;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Parent directory of all git repos
+    #[arg(short, long, value_parser, default_value = ".")]
+    dir: String,
+
+    /// Depth to recursively search subfolders for git repositories
+    #[arg(short, long, value_parser, default_value = "4")]
+    max_depth: usize,
+}
+
 fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
+    let args = Args::parse();
 
-    if args.len() < 2 {
-        anyhow::bail!("Parent directory of all repos not specified - try 'git-find-rs $HOME/code'");
-    }
-
-    let parent_directory = &args[1];
-    let repo_paths = find_git_repos(parent_directory)?;
+    let repo_paths = find_git_repos(&args.dir, args.max_depth)?;
     print_results(&repo_paths);
 
     Ok(())
 }
 
-fn find_git_repos(parent_directory: &str) -> Result<Vec<PathBuf>> {
+fn find_git_repos(parent_directory: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
     WalkDir::new(parent_directory)
-        .max_depth(6)
+        .max_depth(max_depth)
         .into_iter()
         .filter_map(|entry| {
             let entry = entry.with_context(|| {
