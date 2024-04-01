@@ -64,5 +64,4 @@ This will show a list of git directories. You can type a partial string of the r
 ## Todo
 
 - Go blazingly fast
-- Tests
 - crates.io release

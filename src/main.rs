@@ -50,3 +50,69 @@ fn print_results(repo_paths: &[PathBuf]) {
         println!("{}", path.display());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::{create_dir, create_dir_all, remove_dir_all, File};
+    use std::io::Write;
+
+    #[test]
+    fn test_is_git_directory() {
+        use super::is_git_directory;
+        let temp_dir = tempfile::tempdir().unwrap();
+        let git_dir = temp_dir.path().join(".git");
+        create_dir(&git_dir).unwrap();
+        let mut file = File::create(git_dir.join("HEAD")).unwrap();
+        writeln!(file, "ref: refs/heads/main").unwrap();
+        assert!(is_git_directory(&temp_dir.path()));
+        remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[test]
+    fn test_is_not_git_directory() {
+        use super::is_git_directory;
+        let temp_dir = tempfile::tempdir().unwrap();
+        assert!(!is_git_directory(&temp_dir.path()));
+        remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[test]
+    fn test_find_git_repos() {
+        use super::find_git_repos;
+        let temp_dir = tempfile::tempdir().unwrap();
+        let git_dir = temp_dir.path().join(".git");
+        create_dir(&git_dir).unwrap();
+        let repos = find_git_repos(temp_dir.path().to_str().unwrap(), 1).unwrap();
+        assert_eq!(repos.len(), 1);
+        remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[test]
+    fn test_find_no_git_repos() {
+        use super::find_git_repos;
+        let temp_dir = tempfile::tempdir().unwrap();
+        let repos = find_git_repos(temp_dir.path().to_str().unwrap(), 1).unwrap();
+        assert!(repos.is_empty());
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_find_git_repos_no_results() {
+        use super::find_git_repos;
+        let temp_dir = tempfile::tempdir().unwrap();
+        let repos = find_git_repos(temp_dir.path().to_str().unwrap(), 1);
+        assert!(repos.expect("Failed to read directory entry in").is_empty());
+        temp_dir.close().unwrap();
+    }
+
+    #[test]
+    fn test_find_get_repos_max_depth_no_results() {
+        use super::find_git_repos;
+        let temp_dir = tempfile::tempdir().unwrap();
+        let git_dir = temp_dir.path().join("outside-search-depth/.git");
+        create_dir_all(&git_dir).unwrap();
+        let repos = find_git_repos(temp_dir.path().to_str().unwrap(), 0).unwrap();
+        assert!(repos.is_empty());
+        remove_dir_all(temp_dir).unwrap();
+    }
+}
