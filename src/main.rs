@@ -1,54 +1,106 @@
 use anyhow::{Context, Result};
 use clap::Parser;
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+
+const GIT_DIR: &str = ".git";
+const DEFAULT_SEARCH_PATH: &str = ".";
+const DEFAULT_MAX_DEPTH: &str = "4";
+const INITIAL_CAPACITY: usize = 64;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
     /// Parent directory of all git repos
-    #[arg(short, long, value_parser, default_value = ".")]
-    dir: String,
+    #[arg(short = 'd', long = "dir", value_parser, default_value = DEFAULT_SEARCH_PATH)]
+    search_path: String,
 
     /// Depth to recursively search subfolders for git repositories
-    #[arg(short, long, value_parser, default_value = "4")]
+    #[arg(short, long, value_parser, default_value = DEFAULT_MAX_DEPTH)]
     max_depth: usize,
 }
 
 fn main() -> Result<()> {
+    run()
+}
+
+/// Main application logic separated from CLI entry point.
+fn run() -> Result<()> {
     let args = Args::parse();
 
-    let repo_paths = find_git_repos(&args.dir, args.max_depth)?;
-    print_results(&repo_paths);
+    let repo_paths = find_git_repos(&args.search_path, args.max_depth)?;
+    print_results(&repo_paths)?;
 
     Ok(())
 }
 
-fn find_git_repos(parent_directory: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
-    WalkDir::new(parent_directory)
+/// Recursively searches for git repositories in the specified directory.
+///
+/// # Arguments
+/// * `search_path` - The root directory to search from
+/// * `max_depth` - Maximum depth to recurse into subdirectories
+///
+/// # Returns
+/// A vector of paths to directories containing .git folders
+///
+/// # Errors
+/// Returns an error if directory traversal fails due to permissions or I/O issues
+fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
+    let mut repos = Vec::with_capacity(INITIAL_CAPACITY); // Initial capacity hint for common cases
+    
+    for entry in WalkDir::new(search_path)
         .max_depth(max_depth)
+        .follow_links(false)
         .into_iter()
-        .filter_map(|entry| {
-            let entry = entry.with_context(|| {
-                format!("Failed to read directory entry in '{}'", parent_directory)
-            });
-            match entry {
-                Ok(entry) if is_git_directory(entry.path()) => Some(Ok(entry.into_path())),
-                Ok(_) => None, // Ignore non-git directories without errors
-                Err(e) => Some(Err(e.into())),
-            }
+        .filter_entry(|e| {
+            // Skip .git subdirectories but allow .git directories themselves
+            !(e.file_name() == GIT_DIR && e.depth() > 0)
         })
-        .collect()
-}
-
-fn is_git_directory(path: &Path) -> bool {
-    path.is_dir() && path.join(".git").exists()
-}
-
-fn print_results(repo_paths: &[PathBuf]) {
-    for path in repo_paths {
-        println!("{}", path.display());
+    {
+        let entry = entry.with_context(|| {
+            format!("Failed to read directory entry")
+        })?;
+        
+        if is_git_directory(entry.path()) {
+            repos.push(entry.into_path());
+        }
     }
+    
+    Ok(repos)
+}
+
+/// Checks if a directory is a git repository by looking for a .git folder.
+///
+/// # Arguments
+/// * `path` - The directory path to check
+///
+/// # Returns
+/// `true` if the path is a directory containing a .git folder, `false` otherwise
+fn is_git_directory(path: &Path) -> bool {
+    path.join(GIT_DIR).exists() && path.is_dir()
+}
+
+/// Prints the list of repository paths to stdout using buffered output.
+///
+/// # Arguments
+/// * `repo_paths` - A slice of PathBuf objects representing git repository paths
+///
+/// # Returns
+/// `Ok(())` on success, or an error if writing to stdout fails
+///
+/// # Errors
+/// Returns an error if there are I/O issues writing to stdout
+fn print_results(repo_paths: &[PathBuf]) -> Result<()> {
+    let stdout = std::io::stdout();
+    let mut writer = BufWriter::new(stdout.lock());
+    
+    for path in repo_paths {
+        writeln!(writer, "{}", path.display())?;
+    }
+    
+    writer.flush()?;
+    Ok(())
 }
 
 #[cfg(test)]
