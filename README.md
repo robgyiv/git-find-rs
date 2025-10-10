@@ -13,7 +13,7 @@ Note that as of right now, this is mostly for my own understanding and built for
 Obviously this is not a totally fair comparison as Rust is compiled, but compared to [git-find-repos](https://github.com/acroz/git-find-repos) we see the following improvement on my 2017 MacBook Pro with ~100 git directories:
 
 ```bash
-$ hyperfine --warmup 3 '/usr/local/bin/git-find-rs $HOME/code' '$HOME/.local/bin/git-find-repos $HOME/code'
+$ hyperfine --warmup 3 '/usr/local/bin/git-find-rs -d $HOME/code' '$HOME/.local/bin/git-find-repos $HOME/code'
 Benchmark 1: /usr/local/bin/git-find-rs $HOME/code
   Time (mean ± σ):     284.2 ms ±   6.8 ms    [User: 45.5 ms, System: 234.2 ms]
   Range (min … max):   274.1 ms … 297.4 ms    10 runs
@@ -23,7 +23,7 @@ Benchmark 2: $HOME/.local/bin/git-find-repos $HOME/code
   Range (min … max):   733.6 ms … 860.2 ms    10 runs
 
 Summary
-  '/usr/local/bin/git-find-rs $HOME/code' ran
+  '/usr/local/bin/git-find-rs -d $HOME/code' ran
     2.68 ± 0.15 times faster than '$HOME/.local/bin/git-find-repos $HOME/code'
 ```
 
@@ -34,7 +34,7 @@ Summary
 ```bash
 # Clone this repo to a local directory, for example `/Users/foo/git-find-rs`
 $ cargo build --release
-$ ln -s /Users/foo/git-find-rs/target/release/git-find-rs /usr/local/bin/git-find-rs
+$ ln -s $HOME/git-find-rs/target/release/git-find-rs /usr/local/bin/git-find-rs
 ```
 
 ---
@@ -46,7 +46,7 @@ Create a function to use `git-find-rs`, for example:
 ```bash
 function repo
     set initial_query $argv
-    set code_dir "/Users/foo/code"
+    set code_dir "$HOME/code"
     set dest (git-find-rs "$code_dir" | fzy -q "$initial_query" -l 20) && cd "$dest"
 end
 ```
