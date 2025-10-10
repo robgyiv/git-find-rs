@@ -48,7 +48,7 @@ fn run() -> Result<()> {
 /// Returns an error if directory traversal fails due to permissions or I/O issues
 fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
     let mut repos = Vec::with_capacity(INITIAL_CAPACITY); // Initial capacity hint for common cases
-    
+
     for entry in WalkDir::new(search_path)
         .max_depth(max_depth)
         .follow_links(false)
@@ -58,15 +58,13 @@ fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
             !(e.file_name() == GIT_DIR && e.depth() > 0)
         })
     {
-        let entry = entry.with_context(|| {
-            format!("Failed to read directory entry")
-        })?;
-        
+        let entry = entry.with_context(|| format!("Failed to read directory entry"))?;
+
         if is_git_directory(entry.path()) {
             repos.push(entry.into_path());
         }
     }
-    
+
     Ok(repos)
 }
 
@@ -94,11 +92,11 @@ fn is_git_directory(path: &Path) -> bool {
 fn print_results(repo_paths: &[PathBuf]) -> Result<()> {
     let stdout = std::io::stdout();
     let mut writer = BufWriter::new(stdout.lock());
-    
+
     for path in repo_paths {
         writeln!(writer, "{}", path.display())?;
     }
-    
+
     writer.flush()?;
     Ok(())
 }
