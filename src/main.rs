@@ -58,7 +58,7 @@ fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
             !(e.file_name() == GIT_DIR && e.depth() > 0)
         })
     {
-        let entry = entry.with_context(|| format!("Failed to read directory entry"))?;
+        let entry = entry.with_context(|| "Failed to read directory entry".to_string())?;
 
         if is_git_directory(entry.path()) {
             repos.push(entry.into_path());
@@ -114,7 +114,7 @@ mod tests {
         create_dir(&git_dir).unwrap();
         let mut file = File::create(git_dir.join("HEAD")).unwrap();
         writeln!(file, "ref: refs/heads/main").unwrap();
-        assert!(is_git_directory(&temp_dir.path()));
+        assert!(is_git_directory(temp_dir.path()));
         remove_dir_all(temp_dir).unwrap();
     }
 
@@ -122,7 +122,7 @@ mod tests {
     fn test_is_not_git_directory() {
         use super::is_git_directory;
         let temp_dir = tempfile::tempdir().unwrap();
-        assert!(!is_git_directory(&temp_dir.path()));
+        assert!(!is_git_directory(temp_dir.path()));
         remove_dir_all(temp_dir).unwrap();
     }
 
