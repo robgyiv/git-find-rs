@@ -48,7 +48,7 @@ fn run() -> Result<()> {
 /// Returns an error if directory traversal fails due to permissions or I/O issues
 fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
     let mut repos = Vec::with_capacity(INITIAL_CAPACITY); // Initial capacity hint for common cases
-    
+
     for entry in WalkDir::new(search_path)
         .max_depth(max_depth)
         .follow_links(false)
@@ -58,15 +58,13 @@ fn find_git_repos(search_path: &str, max_depth: usize) -> Result<Vec<PathBuf>> {
             !(e.file_name() == GIT_DIR && e.depth() > 0)
         })
     {
-        let entry = entry.with_context(|| {
-            format!("Failed to read directory entry")
-        })?;
-        
+        let entry = entry.with_context(|| "Failed to read directory entry".to_string())?;
+
         if is_git_directory(entry.path()) {
             repos.push(entry.into_path());
         }
     }
-    
+
     Ok(repos)
 }
 
@@ -94,11 +92,11 @@ fn is_git_directory(path: &Path) -> bool {
 fn print_results(repo_paths: &[PathBuf]) -> Result<()> {
     let stdout = std::io::stdout();
     let mut writer = BufWriter::new(stdout.lock());
-    
+
     for path in repo_paths {
         writeln!(writer, "{}", path.display())?;
     }
-    
+
     writer.flush()?;
     Ok(())
 }
@@ -116,7 +114,7 @@ mod tests {
         create_dir(&git_dir).unwrap();
         let mut file = File::create(git_dir.join("HEAD")).unwrap();
         writeln!(file, "ref: refs/heads/main").unwrap();
-        assert!(is_git_directory(&temp_dir.path()));
+        assert!(is_git_directory(temp_dir.path()));
         remove_dir_all(temp_dir).unwrap();
     }
 
@@ -124,7 +122,7 @@ mod tests {
     fn test_is_not_git_directory() {
         use super::is_git_directory;
         let temp_dir = tempfile::tempdir().unwrap();
-        assert!(!is_git_directory(&temp_dir.path()));
+        assert!(!is_git_directory(temp_dir.path()));
         remove_dir_all(temp_dir).unwrap();
     }
 
